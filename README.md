@@ -92,11 +92,6 @@ flowchart TD
 
 This project extends research from my undergraduate thesis on video anomaly detection, applying the same core idea to industrial quality inspection.
 
-## Documentation
-
-- PROJECT_REPORT.md covers methodology, testing, and results in technical detail
-- GUIDE.md is a plain language guide for non technical readers
-- DOCUMENTATION.md covers every feature and setting in detail
 
 ## Notes
 
