@@ -6,7 +6,7 @@ Built on PatchCore, an unsupervised anomaly detection method. It only needs phot
 
 ## Live Demo
 
-Try it here:  https://lnkd.in/gau4KXvs
+Try it here:  https://industrial-defect-detector.vercel.app/
 
 Pick a product category, then click a sample photo to see a result. No upload required to test it.
 
