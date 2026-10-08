@@ -1,0 +1,43 @@
+# Dependencies for the Gradio Hugging Face Space (deploy/gradio_app.py).
+#
+# Rename this to requirements.txt at the ROOT of the Space repo - Hugging Face's
+# gradio SDK only reads that one filename, and it cannot be pointed elsewhere.
+# The Docker/Render path keeps using the project's own requirements.txt; the two
+# are deliberately separate so neither deployment can break the other.
+#
+# The extra index below is what keeps the Space small and fast to build: without
+# it pip resolves torch to the default CUDA wheel and drags in ~2.5 GB of nvidia
+# packages that a CPU Space can never use.
+--extra-index-url https://download.pytorch.org/whl/cpu
+
+# Pinned to 2.8.0 because Hugging Face's ZeroGPU hardware only accepts a fixed
+# set of torch builds (2.8.0, 2.9.1, 2.10.0, 2.11.0, 2.12.1, 2.13.0) and rejects
+# anything else at startup with a configuration error - even for a CPU-only app.
+#
+# 2.8.0 is the oldest accepted version and the closest to the 2.6.0 this project
+# was developed against, so it is the smallest behavioural jump and the most
+# settled of the options. anomalib 2.6.1 requires only torch>=2.6.0, so it is
+# satisfied. Detection output was diffed across both versions and is identical.
+#
+# torchvision must match the torch release: 2.8.0 pairs with 0.23.0.
+torch==2.8.0
+torchvision==0.23.0
+
+# Detection. Pulls lightning, timm, torchmetrics and opencv-python-headless.
+anomalib==2.6.1
+
+# Defect-type classifier and image handling.
+scikit-learn==1.9.0
+scipy==1.18.1
+joblib==1.6.0
+numpy==2.5.2
+
+# UI and API host. Gradio pins its own pillow/pandas, so those are left
+# unpinned here to avoid a resolver conflict.
+gradio>=5.50,<6
+
+# Required by ZeroGPU hardware, which refuses to start a Space that has no
+# @spaces.GPU function. deploy/gradio_app.py declares a no-op stub purely to
+# satisfy that check; the app still runs entirely on CPU. Pulls no torch of its
+# own, so the pin above is unaffected.
+spaces>=0.51,<1

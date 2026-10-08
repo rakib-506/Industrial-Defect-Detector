@@ -1,0 +1,75 @@
+# Render blueprint - https://render.com/docs/blueprint-spec
+#
+# One Docker web service running the image built by ./Dockerfile. It serves both
+# the JSON API (under /api) and the built React UI (at /), so no second service
+# or static site is required.
+#
+# To deploy: push this repo to GitHub, then in Render choose
+# "New" -> "Blueprint" and point it at the repository.
+
+services:
+  - type: web
+    name: defect-detector
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    region: oregon
+
+    # Render passes PORT into the container; src/api/__main__.py binds to it.
+    # /health is deliberately trivial - no model access - so it answers while the
+    # memory banks are still loading and even if startup failed.
+    healthCheckPath: /health
+
+    envVars:
+      # No GPU on any of the plans used here. The app reads this and pins to CPU.
+      - key: DEFECT_DETECTOR_DEVICE
+        value: cpu
+      # Keep only the active category's memory bank resident. Measured: caching
+      # all seven peaks at ~1.77 GB RSS, capping at one plateaus at ~1.38 GB.
+      # Costs a ~130 MB reload from disk when the category changes.
+      - key: DEFECT_DETECTOR_MAX_CACHED_BANKS
+        value: "1"
+      # Unbuffered logs, so startup output appears in Render's log stream
+      # immediately rather than being held in a pipe buffer.
+      - key: PYTHONUNBUFFERED
+        value: "1"
+      # Writable cache locations; the container runs as a non-root user.
+      - key: HF_HOME
+        value: /home/appuser/.cache/huggingface
+      - key: TORCH_HOME
+        value: /home/appuser/.cache/torch
+
+    autoDeploy: false
+
+# !! MEMORY: `plan: free` will not run this. Measured, not estimated.
+#
+#   RSS on CPU:   torch imported              382 MB
+#                 app modules imported        478 MB
+#                 after ONE inspection      1,128 MB   <-- already 2.2x the limit
+#                 bounded by the cap above  ~1,381 MB
+#
+#   Render free and starter instances both cap at 512 MB, so the container is
+#   OOM-killed on the first inspection - not merely under load. The service will
+#   build and pass its health check (that endpoint touches no models), then die
+#   the moment someone uploads an image, which is a confusing way to fail.
+#
+#   `plan: free` is left here because it was asked for, and because the service
+#   is useful in that state for checking that the build, routing and health check
+#   work. Before the demo is actually usable, change it to an instance with at
+#   least 2 GB:
+#
+#       plan: standard        # 2 GB - the first size that fits
+#
+#   Cheaper alternatives that keep a small plan, if paying is not an option:
+#     * ship fewer categories (each is ~125 MB on disk, and the resident cost is
+#       dominated by torch itself, so this helps less than it sounds)
+#     * store memory banks as float16 (~halves them, slightly changes scores)
+#   Neither is applied here: both trade away behaviour, and that is your call.
+#
+# Other free/small-plan behaviour, so it is not a surprise:
+#
+#   * The service sleeps after ~15 minutes idle. The next request pays a cold
+#     start of roughly a minute, most of it image start plus the first
+#     memory-bank load.
+#   * Build time is dominated by pip installing torch; expect several minutes.

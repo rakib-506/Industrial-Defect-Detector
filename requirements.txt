@@ -1,0 +1,37 @@
+# Install torch FIRST from the right index, then this file. The pins below match
+# either build, because PEP 440 treats `==2.6.0` as satisfied by `2.6.0+cpu`, so
+# pip will not replace what you already installed.
+#
+#   local machine with an NVIDIA GPU:
+#     pip install torch==2.6.0 torchvision==0.21.0 --index-url https://download.pytorch.org/whl/cu124
+#   CPU only, e.g. the Docker image for Hugging Face Spaces:
+#     pip install torch==2.6.0 torchvision==0.21.0 --index-url https://download.pytorch.org/whl/cpu
+#
+# then:
+#   pip install -r requirements.txt
+#
+# Installing this file on its own pulls the default PyPI wheel, which on Linux
+# drags in ~2.5 GB of CUDA libraries that a CPU deployment never uses.
+#
+# Verified on Python 3.12.3 / Windows 11 / GTX 1650 (4 GB).
+
+torch==2.6.0
+torchvision==0.21.0
+
+# Anomaly detection. Pulls lightning, timm and torchmetrics.
+anomalib==2.6.1
+
+# Defect-type classifier and evaluation.
+scikit-learn==1.9.0
+scipy==1.18.1
+joblib==1.6.0
+numpy==2.5.2
+pillow==12.3.0
+
+# API layer.
+fastapi==0.141.1
+uvicorn[standard]==0.52.4
+python-multipart==0.0.32
+
+# Used by scripts/api_test.py.
+httpx==0.28.1
