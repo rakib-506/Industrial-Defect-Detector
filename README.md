@@ -12,7 +12,7 @@ Pick a product category, then click a sample photo to see a result. No upload re
 
 ## Demo Video
 
-[your video link or embed]
+https://github.com/user-attachments/assets/7e5aa647-54e9-4acb-af3c-5b471ab9d053
 
 ## What It Does
 
