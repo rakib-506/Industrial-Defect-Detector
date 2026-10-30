@@ -1,30 +1,4 @@
-"""Onboard a brand-new product category from a folder of photographs.
 
-Developer-run, one command per client. Nothing here reimplements training or
-calibration: it materialises the client's photos into the MVTec layout every
-existing stage already understands, then calls the exact same functions the six
-built-in categories were built with:
-
-    train_patchcore.train_category  ->  calibrate.calibrate_category
-                                    ->  train_classifier.train_category
-
-Usage
------
-Detection only (no labelled defects yet):
-
-    python -m scripts.onboard_new_category --category screws \
-        --good-dir "C:/clients/acme/good_photos"
-
-With labelled defect examples, one subfolder per defect type:
-
-    python -m scripts.onboard_new_category --category screws \
-        --good-dir "C:/clients/acme/good_photos" \
-        --defects-dir "C:/clients/acme/defects"     # defects/<type>/*.png
-
-The result lands in models/<category>/ and outputs/<category>/ exactly like the
-built-in categories, so the API and the frontend category switcher pick it up on
-next restart with no wiring.
-"""
 
 from __future__ import annotations
 
@@ -83,14 +57,7 @@ def _force_remove(path: Path) -> None:
 
 
 def write_blank_masks(image_paths: list[Path], destination: Path) -> None:
-    """Create all-black ground-truth masks for defect images.
-
-    anomalib's MVTec loader refuses to build a dataset whose defective test
-    images have no matching mask, but a client supplying defect photographs will
-    not have pixel-level annotations. Blank masks satisfy the loader; `calibrate`
-    detects that they carry no positive pixels and reports pixel metrics as null
-    rather than computing a meaningless number.
-    """
+ 
     destination.mkdir(parents=True, exist_ok=True)
     for path in image_paths:
         with Image.open(path) as img:
@@ -134,9 +101,7 @@ def materialise(
                 "Expected <defects-dir>/<defect_type>/*.png, or omit --defects-dir."
             )
 
-    # Reserve a slice of good images for test/good. Deterministic (every Nth) so
-    # a rerun produces the same split, and it samples across the whole folder
-    # rather than taking one contiguous block.
+
     n_test = int(round(len(good) * TEST_GOOD_RATIO))
     step = max(len(good) // n_test, 1) if n_test else 0
     test_good = [good[i] for i in range(0, len(good), step)][:n_test] if n_test else []
@@ -159,23 +124,15 @@ def materialise(
     }
 
 
-# Below this many calibration images the MAD-based spread estimate gets
-# unreliable; measured at 16 images it collapsed and the threshold came out too
-# tight. Above ~20 it behaved.
+
 MIN_CALIBRATION_IMAGES = 20
-# Good photos below which the memory bank is too sparse to cover normal
-# variation, so ordinary parts start scoring as novel.
+
 RECOMMENDED_GOOD_IMAGES = 200
 ACCEPTABLE_FPR = 0.05
 
 
 def health_check(metrics: dict, n_good: int) -> list[str]:
-    """Flag calibration that is statistically too thin to trust.
 
-    The reserved test/good images were never in the memory bank, so the false
-    alarm rate on them is a real, measurable signal - and the single most useful
-    thing to show an operator before they deploy a freshly onboarded category.
-    """
     issues: list[str] = []
     cal = metrics.get("calibration_scores", {})
     n_cal = cal.get("n", 0)
