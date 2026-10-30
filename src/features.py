@@ -1,18 +1,4 @@
-"""Feature extraction for the defect-type classifier.
 
-The classifier answers a different question from PatchCore: given that a part is
-anomalous, *what kind* of defect is it? It therefore looks only at the region
-PatchCore flagged, described two ways:
-
-1. Appearance - the PatchCore patch embeddings, pooled with the anomaly map as
-   attention weights, so the vector describes the defect rather than the bottle.
-2. Geometry - shape statistics of the thresholded region. These carry most of
-   the signal between the MVTec bottle classes: `broken_large` is one big
-   contiguous area, `broken_small` a small one, `contamination` tends to be
-   small, rounder and often multi-blob.
-
-Both are shared verbatim between training and serving so there is no skew.
-"""
 
 from __future__ import annotations
 
