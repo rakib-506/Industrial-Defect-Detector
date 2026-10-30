@@ -1,18 +1,4 @@
-"""Simulate the deployed container without Docker.
 
-Reproduces the three things that differ inside the image and are easy to get
-wrong, because they only fail once deployed:
-
-  1. The raw MVTec dataset and the staged client photos are NOT present -
-     only models/, outputs/<cat>/metrics.json and deploy/samples/.
-  2. There is no GPU, so the device must be CPU.
-  3. The UI and the API are served by one app on one port, API under /api.
-
-(1) and (2) are checked here directly. (3) needs a running server; start one with
-`uvicorn src.api.main:app --port 7860` and run `scripts/api_test.py` against it.
-
-Run:  python -m scripts.deploy_check
-"""
 
 from __future__ import annotations
 
