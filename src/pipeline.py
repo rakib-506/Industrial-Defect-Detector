@@ -1,17 +1,4 @@
-"""End-to-end inspection pipeline: detect, localise, then explain.
 
-Stage 1 (PatchCore) decides whether a part is anomalous and where. Stage 2 (the
-defect-type classifier) only runs when stage 1 says something is wrong - naming
-a defect type on a clean part would be meaningless, since the classifier has
-only ever seen defective examples.
-
-Serving several categories at once, the expensive part is the ImageNet backbone,
-which is identical across categories. `InspectionService` therefore keeps one
-torch module per distinct PatchCore configuration and swaps only the memory bank
-(the sole per-category state) when the requested category changes. Six separate
-inferencers would duplicate a ~270 MB backbone six times, which does not fit
-alongside the memory banks on a 4 GB card.
-"""
 
 from __future__ import annotations
 
@@ -104,12 +91,7 @@ class InspectionService:
         self._models: dict[tuple, object] = {}
         self._active: tuple | None = None  # (signature, category) currently on device
 
-        # How many memory banks to keep resident. Each is 110-150 MB, so caching
-        # all seven costs roughly 1.8 GB of RSS versus 1.1 GB for one - the
-        # difference between fitting on a small hosted instance and not.
-        # Unlimited by default, so local behaviour is unchanged; set
-        # DEFECT_DETECTOR_MAX_CACHED_BANKS=1 on a memory-constrained host, at the
-        # cost of reloading ~130 MB from disk when the category changes.
+
         raw_cap = os.environ.get("DEFECT_DETECTOR_MAX_CACHED_BANKS", "").strip()
         self.max_cached_banks = int(raw_cap) if raw_cap.isdigit() and int(raw_cap) > 0 else None
 
