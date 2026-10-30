@@ -1,18 +1,4 @@
-# Industrial Defect Detector - single-container deployment
-#
-# One image, one process, one port. FastAPI serves both the JSON API under /api
-# and the built React app at /, so the whole demo needs exactly one exposed port.
-#
-# The port is read from PORT at runtime, so the same image runs on Render (which
-# assigns one), on Hugging Face Spaces (which expects 7860) and locally.
-#
-# Build:        docker build -t defect-detector .
-# Run:          docker run --rm -p 7860:7860 defect-detector
-# Render-like:  docker run --rm -e PORT=10000 -p 10000:10000 defect-detector
 
-# --------------------------------------------------------------------------- #
-# Stage 1 - build the React app. Node is not needed in the final image.
-# --------------------------------------------------------------------------- #
 FROM node:20-slim AS frontend
 
 WORKDIR /build
@@ -50,9 +36,7 @@ ENV PYTHONUNBUFFERED=1 \
     TORCH_HOME=/home/appuser/.cache/torch \
     MPLCONFIGDIR=/home/appuser/.cache/matplotlib
 
-# CPU-only torch, installed BEFORE requirements.txt so the resolver cannot pull
-# the default CUDA build. The CUDA wheels add roughly 2.5 GB of nvidia-* packages
-# that would be dead weight here.
+
 RUN pip install --no-cache-dir \
         torch==2.6.0 torchvision==0.21.0 \
         --index-url https://download.pytorch.org/whl/cpu
@@ -77,8 +61,7 @@ RUN mkdir -p /home/appuser/.cache && chown -R appuser:appuser /home/appuser
 
 USER appuser
 
-# Documentation only; the actual port comes from PORT at runtime. 7860 is the
-# fallback the entry point uses when PORT is unset.
+
 EXPOSE 7860
 
 # Entry point reads PORT (Render, Cloud Run, Fly, Heroku) and falls back to 7860.
