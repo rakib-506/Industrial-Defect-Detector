@@ -99,9 +99,7 @@ def main() -> int:
                 elif r["is_defective"] and not r["defect_probabilities"]:
                     failures.append(f"{s['id']}: flagged defective but no probabilities")
 
-                # Verdict accuracy is a model property, not an API contract.
-                # Onboarded categories may be deliberately under-calibrated and
-                # already carry an explicit warning from the onboarding script.
+             
                 if r["is_defective"] != expected and not meta.get("onboarded"):
                     failures.append(f"{s['id']}: detection mismatch")
             print(f"POST /predict/sample  {category:<11} -> {checked} samples checked")
@@ -129,9 +127,7 @@ def main() -> int:
             if not body["images"][key].startswith("data:image/"):
                 failures.append(f"bad {key} image")
 
-        # The wrong-product safety check, over HTTP: a clean photo of one
-        # category sent to a different category's checker must come back
-        # "uncertain" with no defect type, not a confident DEFECT.
+ 
         if len(cats) >= 2:
             checker = cats[0]["category"]
             other = next(c["category"] for c in cats if c["category"] != checker)
