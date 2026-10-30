@@ -1,14 +1,4 @@
-"""Export a small demo gallery that can ship inside a container image.
 
-The deployed image does not carry the raw MVTec folders - they are far too large
-and are excluded by .dockerignore. Without them the sample gallery would be empty,
-so this writes a few downscaled JPEGs per category into `deploy/samples/` in the
-same `<category>/test/<label>/` layout the dataset loader already understands.
-`config.SAMPLES_ROOT` is the last dataset root, so these are used only when the
-real dataset is absent.
-
-Run:  python -m scripts.export_samples
-"""
 
 from __future__ import annotations
 
