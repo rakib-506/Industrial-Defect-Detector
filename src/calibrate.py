@@ -69,20 +69,7 @@ def calibrate_category(category: str, batch_size: int = 4, quiet: bool = False) 
     log(f"[calib:{category}] scoring {len(val_good)} held-out good images…")
     val_scores, val_maps = score_paths(inferencer, val_good, batch_size)
 
-    # Two leakage-free rules over the same held-out good images.
-    #
-    # `max` - the highest score any known-good part produced. Simple, but it is
-    # the maximum of only ~20 samples, so it is whatever the single weirdest
-    # good image happened to score. Measured across six categories it lands too
-    # high on capsule and tile (missing real defects) and too low on carpet,
-    # grid and metal_nut (false alarms) - noisy in both directions.
-    #
-    # `robust` - a tolerance limit at median + 3 sigma, with sigma estimated
-    # from the median absolute deviation so one outlier cannot inflate it. This
-    # estimates the same upper tail of the good-part distribution without
-    # depending on a single observation, and was better or equal on all six
-    # categories. It is the operating default; `max` is still reported so the
-    # difference stays visible.
+
     max_threshold = float(val_scores.max())
     median = float(np.median(val_scores))
     mad = float(np.median(np.abs(val_scores - median)))
@@ -90,9 +77,7 @@ def calibrate_category(category: str, batch_size: int = 4, quiet: bool = False) 
     image_threshold = robust_threshold
 
     val_pixels = np.concatenate([m.ravel() for m in val_maps])
-    # Same rule as the image threshold, one level down: the highest value any
-    # pixel of a known-good part produced. Quantiles (p99, p99.9) sit lower and
-    # over-segment badly.
+   
     pixel_threshold = float(val_pixels.max())
     log(
         f"[calib:{category}] held-out good scores: min={val_scores.min():.4f} "
@@ -104,10 +89,7 @@ def calibrate_category(category: str, batch_size: int = 4, quiet: bool = False) 
         f"pixel threshold={pixel_threshold:.4f}"
     )
 
-    # --- 2. Evaluate on the untouched test split -----------------------------
-    # A freshly onboarded category may have no labelled defects at all, or only
-    # held-out good images. Each case reports exactly what it can measure and
-    # leaves the rest null, rather than inventing a number or crashing.
+   
     image_auroc = image_ap = pixel_auroc = pixel_ap = pixel_f1 = None
     at_threshold = at_max_threshold = None
     per_class: dict[str, dict] = {}
@@ -178,10 +160,7 @@ def calibrate_category(category: str, batch_size: int = 4, quiet: bool = False) 
                 "reported as null (detection and heatmaps are unaffected)"
             )
 
-        # How much of the frame genuine defects of this product actually cover.
-        # Recorded as a diagnostic so the safety margin under the fixed
-        # out-of-distribution threshold is visible per category; the threshold
-        # itself is a constant and is not fitted to these numbers.
+    
         defect_idx = [i for i, s in enumerate(test_samples) if s.is_defective]
         if defect_idx:
             coverages = [
@@ -251,9 +230,7 @@ def calibrate_category(category: str, batch_size: int = 4, quiet: bool = False) 
             "mad": mad,
             "n": int(len(val_scores)),
         },
-        # Safety check for photos of the wrong product entirely. Triggered on
-        # how much of the frame is anomalous, not on the score - see
-        # config.OOD_COVERAGE_THRESHOLD for why.
+
         "out_of_distribution_threshold": config.OOD_COVERAGE_THRESHOLD,
         "out_of_distribution_rule": (
             "anomalous coverage >= threshold -> verdict 'uncertain' "
@@ -269,15 +246,13 @@ def calibrate_category(category: str, batch_size: int = 4, quiet: bool = False) 
             "test_defective": n_defective,
             "defect_classes": len(dataset.defect_labels(category)),
         },
-        # Display range for the heatmap: colours saturate at twice the novelty
-        # threshold so a hot spot always means the same thing across uploads.
+
         "heatmap_range": [float(np.median(val_pixels)), float(pixel_threshold * 2.0)],
         "score_range": [0.0, float(image_threshold * 2.0)],
     }
 
     config.outputs_dir(category).mkdir(parents=True, exist_ok=True)
-    # Preserve a classifier block from an earlier run so calibration can be
-    # re-run without wiping stage-2 results.
+
     existing = (
         json.loads(config.metrics_path(category).read_text())
         if config.metrics_path(category).exists()
