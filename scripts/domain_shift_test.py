@@ -1,18 +1,4 @@
-"""Verify the wrong-product safety check, and that it does not misfire.
 
-Three things must hold at once:
-
-  1. Correct product, no defect      -> "pass"
-  2. Correct product, genuine defect -> "defect", WITH a defect-type label
-  3. Wrong product entirely          -> "uncertain", WITHOUT a defect-type label
-
-(3) is the safety check. (2) is the thing it must never break: a severe local
-defect scores as high as a wrong product, so anything keyed on the score alone
-would destroy it. The check is keyed on anomalous *coverage* instead - see
-config.OOD_COVERAGE_THRESHOLD.
-
-Run:  python -m scripts.domain_shift_test
-"""
 
 from __future__ import annotations
 
@@ -114,11 +100,7 @@ def main() -> int:
                     f"{category}: {counts['uncertain']} genuine defect(s) wrongly "
                     "downgraded to 'uncertain'"
                 )
-            # A good part must never be called "uncertain" - that would mean the
-            # safety check fires on the product it was calibrated for. A good
-            # part called "defect" is the pre-existing false-alarm rate (carpet
-            # 6/49, grid 3/49), measured in calibrate.py and unrelated to this
-            # check, so it is reported but does not fail the run.
+ 
             if bucket == "own_good" and counts["uncertain"]:
                 failures.append(
                     f"{category}: {counts['uncertain']} good part(s) wrongly "
